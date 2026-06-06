@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'notifications',
     'core',
     'rest_framework',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -135,4 +136,5 @@ REST_FRAMEWORK = {
 
     'DEFAULT_PAGINATION': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
