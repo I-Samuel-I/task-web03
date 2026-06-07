@@ -15,6 +15,21 @@ class EventSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
 
+    def validate(self, data):
+        if self.instance:
+            nova_data = data.get('date', self.instance.date)
+
+            possui_inscritos = self.instance.registrations.filter(
+                is_deleted=False
+            ).exists()
+
+            if possui_inscritos and nova_data != self.instance.date:
+                raise serializers.ValidationError(
+                    "Não é permitido alterar a data de um evento que já possui inscritos."
+                )
+
+        return data
+
     def create(self, validated_data):
         validated_data['organizer'] = self.context['request'].user
         return super().create(validated_data)

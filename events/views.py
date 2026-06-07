@@ -1,6 +1,8 @@
 from django.db.models import Q
+from django.core.cache import cache
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import viewsets, permissions
+from rest_framework.response import Response
 from .models import Event, Registration
 from .serializers import EventSerializer, RegistrationSerializer
 
@@ -51,6 +53,36 @@ class EventViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    def list(self, request, *args, **kwargs):
+        cache_key = f"eventos_{request.get_full_path()}"
+
+        dados = cache.get(cache_key)
+
+        if dados is not None:
+            return Response(dados)
+
+        response = super().list(request, *args, **kwargs)
+
+        cache.set(
+            cache_key,
+            response.data,
+            timeout=300
+        )
+
+        return response
+
+    def perform_create(self, serializer):
+        serializer.save()
+        cache.clear()
+
+    def perform_update(self, serializer):
+        serializer.save()
+        cache.clear()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+        cache.clear()
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -81,10 +113,19 @@ class RegistrationViewSet(viewsets.ModelViewSet):
         if event:
             queryset = queryset.filter(event_id=event)
         if event_title:
-            queryset = queryset.filter(event__title__icontains=event_title)
+            queryset = queryset.filter(event__title__icontains(event_title)
+            )
         if created_from:
             queryset = queryset.filter(created_at__date__gte=created_from)
         if created_to:
             queryset = queryset.filter(created_at__date__lte=created_to)
 
         return queryset
+
+    def perform_create(self, serializer):
+        serializer.save()
+        cache.clear()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+        cache.clear()
