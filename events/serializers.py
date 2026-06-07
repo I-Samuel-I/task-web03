@@ -3,7 +3,7 @@ from .models import Event, Registration
 
 
 class EventSerializer(serializers.ModelSerializer):
-    registration_count = serializers.ReadOnlyField()
+    registration_count = serializers.IntegerField(read_only=True)
     organizer = serializers.StringRelatedField(read_only=True)
 
     class Meta:
